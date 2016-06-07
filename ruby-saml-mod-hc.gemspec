@@ -1,12 +1,11 @@
 # coding: utf-8
 
 Gem::Specification.new do |s|
-  s.name = %q{ruby-saml-mod}
-  s.version = "0.2.6"
+  s.name = %q{ruby-saml-mod-hc}
+  s.version = "0.2.7"
   s.authors = ["OneLogin LLC", "Bracken", "Zach", "Cody", "Jeremy", "Paul", "Nick"]
   s.summary = %q{Ruby library for SAML service providers}
-  s.homepage = %q{http://github.com/instructure/ruby-saml}
-  s.description = %q{This is an early fork from https://github.com/onelogin/ruby-saml - I plan to "rebase" these changes ontop of their current version eventually. }
+  s.homepage = %q{http://github.com/hotchalk/ruby-saml}
   s.date = Time.now.strftime("%Y-%m-%d")
 
   s.files = Dir.glob("{lib,spec}/**/*")

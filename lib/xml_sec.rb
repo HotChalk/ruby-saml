@@ -348,18 +348,29 @@ module XMLSecurity
       @signatures ||= [self.at_xpath("//ds:Signature", Onelogin::NAMESPACES)].compact
     end
 
-    def validate(idp_cert_fingerprint, logger = nil)
+    def validate(idp_cert_fingerprint, logger = nil, options = {})
       # get cert from response
-      base64_cert = self.at_xpath("//ds:X509Certificate", Onelogin::NAMESPACES).content
-      cert_text = Base64.decode64(base64_cert)
-      cert = OpenSSL::X509::Certificate.new(cert_text)
+      cert_element = self.at_xpath("//ds:X509Certificate", Onelogin::NAMESPACES)
 
-      # check cert matches registered idp cert, unless we explicitly skip this check
-      unless idp_cert_fingerprint == '*'
-        fingerprint = Digest::SHA1.hexdigest(cert.to_der)
-        expected_fingerprint = idp_cert_fingerprint.gsub(":", "").downcase
-        if fingerprint != expected_fingerprint
-          @validation_error = "Invalid fingerprint (expected #{expected_fingerprint}, got #{fingerprint})"
+      if cert_element
+        base64_cert = cert_element.content
+        cert_text = Base64.decode64(base64_cert)
+        cert = OpenSSL::X509::Certificate.new(cert_text)
+
+        # check cert matches registered idp cert, unless we explicitly skip this check
+        unless idp_cert_fingerprint == '*'
+          fingerprint = Digest::SHA1.hexdigest(cert.to_der)
+          expected_fingerprint = idp_cert_fingerprint.gsub(":", "").downcase
+          if fingerprint != expected_fingerprint
+            @validation_error = "Invalid fingerprint (expected #{expected_fingerprint}, got #{fingerprint})"
+            return false
+          end
+        end
+      else
+        if options[:cert]
+          cert = OpenSSL::X509::Certificate.new(options[:cert])
+        else
+          @validation_error = "Certificate element missing in response (ds:X509Certificate) and no cert provided at settings"
           return false
         end
       end
