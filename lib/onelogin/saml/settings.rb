@@ -27,6 +27,9 @@ module Onelogin::Saml
     # The IdP URL to which the logout request should be sent.
     attr_accessor :idp_slo_target_url
 
+    # The IdP trusted certificate. This is provided from the identity provider when setting up the relationship.
+    attr_accessor :idp_cert
+
     # The certificate fingerprint. This is provided from the identity provider when setting up the relationship.
     attr_accessor :idp_cert_fingerprint
 

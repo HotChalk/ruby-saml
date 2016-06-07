@@ -85,17 +85,20 @@ module Onelogin::Saml
         return false
       end
 
-      if !settings.idp_cert_fingerprint
-        @validation_error = "No fingerprint configured in SAML settings"
+      if !settings.idp_cert_fingerprint && !settings.idp_cert
+        @validation_error = "No IdP certificate or fingerprint configured in SAML settings"
         return false
       end
+
+      options = {}
+      options[:cert] = settings.idp_cert
 
       # Verify the original document if it has a signature, otherwise verify the signature
       # in the encrypted portion. If there is no signature, then we can't verify.
       verified = false
 
       if document.has_signature?
-        verified = document.validate(settings.idp_cert_fingerprint, @logger)
+        verified = document.validate(settings.idp_cert_fingerprint, @logger, options)
         if !verified
           @validation_error = document.validation_error
           return false
@@ -103,7 +106,7 @@ module Onelogin::Saml
       end
 
       if !verified && decrypted_document.has_signature?
-        verified = decrypted_document.validate(settings.idp_cert_fingerprint, @logger)
+        verified = decrypted_document.validate(settings.idp_cert_fingerprint, @logger, options)
         if !verified
           @validation_error = decrypted_document.validation_error
           return false

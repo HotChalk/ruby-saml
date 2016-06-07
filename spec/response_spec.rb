@@ -199,4 +199,33 @@ describe Onelogin::Saml::Response do
       expect(request.forward_url[0...prefix.size]).to eql(prefix)
     end
   end
+
+  describe "x509_validation" do
+    let(:ruby_saml_cert_text) { File.read(fixture_path("test7-cert.pem")) }
+
+    it "should return false when no X509Certificate and no cert provided at settings" do
+      @xmlb64 = Base64.encode64(File.read(fixture_path("test7-response.xml")))
+      @settings = Onelogin::Saml::Settings.new(:idp_cert => nil)
+      @response = Onelogin::Saml::Response.new(@xmlb64, @settings)
+      @response.process(@settings)
+      @response.should_not be_is_valid
+    end
+
+    it "should return false when no X509Certificate and the cert provided at settings mismatches" do
+      @xmlb64 = Base64.encode64(File.read(fixture_path("test7-response.xml")))
+      wrong_cert = ruby_saml_cert_text.sub('X', 'Y') # do something dumb to mess up the cert
+      @settings = Onelogin::Saml::Settings.new(:idp_cert => wrong_cert)
+      @response = Onelogin::Saml::Response.new(@xmlb64, @settings)
+      @response.process(@settings)
+      @response.should_not be_is_valid
+    end
+
+    it "should return true when no X509Certificate and the cert provided at settings matches" do
+      @xmlb64 = File.read(fixture_path("test7-response.xml"))
+      @settings = Onelogin::Saml::Settings.new(:idp_cert => ruby_saml_cert_text)
+      @response = Onelogin::Saml::Response.new(@xmlb64, @settings)
+      @response.process(@settings)
+      @response.should be_is_valid
+    end
+  end
 end
