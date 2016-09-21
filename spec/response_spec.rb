@@ -22,6 +22,19 @@ describe Onelogin::Saml::Response do
       @response.status_message.strip.should == ""
     end
 
+    it "support multiple valid certs" do
+      @settings.idp_cert_fingerprint = ['somethingold', 'def18dbed547cdf3d52b627f41637c443045fe33']
+      @response = Onelogin::Saml::Response.new(@xmlb64, @settings)
+      @response.should be_is_valid
+    end
+
+    it "gives a decent error for a fingerprint problem" do
+      @settings.idp_cert_fingerprint = ['somethingold']
+      @response = Onelogin::Saml::Response.new(@xmlb64, @settings)
+      @response.should_not be_is_valid
+      @response.validation_error.should match(/somethingold/)
+    end
+
     it "should not be able to decrypt without the proper key" do
       @settings.xmlsec_privatekey = fixture_path("wrong-key.pem")
       XMLSecurity.mute do
@@ -162,7 +175,9 @@ describe Onelogin::Saml::Response do
 
   describe "forward_urls" do
     let(:name_qualifier) { 'foo' }
+    let(:sp_name_qualifier) { 'foo' }
     let(:name_id) { 'bar'}
+    let(:name_identifier_format) { Onelogin::Saml::NameIdentifiers::UNSPECIFIED }
     let(:session_index) { 'baz' }
 
     it "should should append the saml request to a url" do
@@ -177,7 +192,11 @@ describe Onelogin::Saml::Response do
       prefix = "http://example.com/login.php?SAMLRequest="
       expect(forward_url[0...prefix.size]).to eql(prefix)
 
-      request = Onelogin::Saml::LogoutRequest::generate(name_qualifier, name_id, session_index, settings)
+      request = Onelogin::Saml::LogoutRequest::generate(name_qualifier,
+                                                        sp_name_qualifier,
+                                                        name_id,
+                                                        name_identifier_format,
+                                                        session_index, settings)
       prefix = "http://example.com/logout.php?SAMLRequest="
       expect(request.forward_url[0...prefix.size]).to eql(prefix)
     end
@@ -194,7 +213,12 @@ describe Onelogin::Saml::Response do
       prefix = "http://example.com/login.php?param=foo&SAMLRequest="
       expect(forward_url[0...prefix.size]).to eql(prefix)
 
-      request = Onelogin::Saml::LogoutRequest::generate(name_qualifier, name_id, session_index, settings)
+      request = Onelogin::Saml::LogoutRequest::generate(name_qualifier,
+                                                        sp_name_qualifier,
+                                                        name_id,
+                                                        name_identifier_format,
+                                                        session_index,
+                                                        settings)
       prefix = "http://example.com/logout.php?param=foo&SAMLRequest="
       expect(request.forward_url[0...prefix.size]).to eql(prefix)
     end
